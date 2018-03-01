@@ -18,6 +18,9 @@ class Intersection:
         
     def distance(self, other):
         return abs(self.row-other.row) + abs(self.col-other.col)
+    
+    def __str__(self):
+        return [self.row, self.col].__str__()
         
 
 class Ride:
@@ -27,9 +30,33 @@ class Ride:
         self.end = Intersection(conf[2], conf[3])
         self.early = conf[4]
         self.latest = conf[5]
+        self.distance = self.start.distance(self.end)
         
+class Vehicle:
     
+    def __init__(self, row, col):
+        self.location = Intersection(row, col)
         
+ 
+def reachOnTime(location, ride, now_time):
+    car_to_start_dist = location.distance(ride.start)
+    start_to_dest_dist = ride.distance
+    total_distance = car_to_start_dist + start_to_dest_dist
+    total_time = ride.latest - now_time
+
+    if now_time>ride.latest:
+        print('ERROR Latest finish is already past.')
+        return -1,-1,-1,-1
+    
+    total_waiting_time = total_time - total_distance
+    is_it_possible_ride = total_waiting_time >= 0 
+    
+    precise_waiting_time = (ride.early - now_time) - car_to_start_dist
+    is_it_possible_precise_start = precise_waiting_time >= 0
+    
+    return is_it_possible_ride, total_waiting_time, is_it_possible_precise_start, precise_waiting_time
+    
+         
 if __name__ == '__main__':
     
     file_name = 'a_example.in'
@@ -46,14 +73,27 @@ if __name__ == '__main__':
     B = int(first_line[4])
     T = int(first_line[5])
     
-    rides = []
+    rides = {}
+    id = 0
     for ride in lines[1:]:
         temp = ride.split()
-        rides.append(Ride([int(t) for t in temp]))
+        rides[id] = Ride([int(t) for t in temp])
+        id = id + 1
         
     #rides = np.array(rides)
-    distances = [x.start.distance(x.end) for x in rides]
+    for i in rides:
+        print(rides[i].distance)
+        
+    vehicles = {}
+
+    for id in range(F):
+        vehicles[id] = Vehicle(0, 0)
+        
+    for i in vehicles:
+        for ride in rides:
+            print(reachOnTime(vehicles[i].location, rides[ride], 0))
+        
+        
     
-    print(distances)
     
     
