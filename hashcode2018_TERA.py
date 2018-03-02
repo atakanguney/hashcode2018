@@ -5,10 +5,7 @@ Created on Thu Mar  1 21:09:28 2018
 
 @author: atakan1
 """
-
-import numpy as np
-import pandas as pd
-
+import random
 
 class Intersection:
     
@@ -34,9 +31,16 @@ class Ride:
         self.distance = self.start.distance(self.end)
         
     def findCar(self, vehicles):
-        print('[DEBUG] findCar method')
-        for i in vehicles:
-            vehicles[i].addToAvailable(self)
+        #print('[DEBUG] findCar method')
+        c = list(vehicles.keys())
+        random.shuffle(c)
+        for i in c:
+            if(vehicles[i].addToAvailable(self)):
+                break
+            
+            
+    def __str__(self):
+        return str(self.r_id)
         
 class Vehicle:
     
@@ -47,32 +51,47 @@ class Vehicle:
     def __str__(self):
         ret_str = ''
         for ride in self.available:
-            ret_str = ret_str + str(ride[2]) + ' '        
+            if(ride[2].r_id >= 0):
+                ret_str = ret_str + str(ride[2].r_id) + ' '        
         return ret_str
  
     def addToAvailable(self, newRide):
-        print('[DEBUG] addToAvailable method')
+        #print('[DEBUG] addToAvailable method')
         for i in range(len(self.available)-1):
             available, eps_new, epf_new = self.put_between(self.available[i], self.available[i+1], newRide)
+            #print('[DEBUG] ' + str(available))
             if(available):
-                self.available.insert((eps_new, epf_new,newRide),i)
-                break
+                self.available.insert(i+1,(eps_new, epf_new,newRide))
+                return True
+        
+        return False
+    
+    def getWriteNumber(self):
+        return len(self.available)
             
     def put_between(self, tuple1, tuple2, newRide):
-        print('[DEBUG] put between')
+        #print('[DEBUG] put between')
         is_poss, _ , _ , _ = self.reachOnTime(tuple1[2].end, newRide, tuple1[1])
-        print(is_poss)
+        k = tuple1[2].end.distance(newRide.start)
+        epsnew = tuple1[1] + k
+        epfnew = epsnew + newRide.distance
+        
+        is_poss_2, _, _, _ = self.reachOnTime(newRide.end,tuple2[2], epfnew)
+        
+        return (is_poss and is_poss_2), epsnew, epfnew
+            
+        
         
         
     def reachOnTime(self, loc, ride, now_time):
-        print('[DEBUG] reach on time')
+        #print('[DEBUG] reach on time')
         car_to_start_dist = loc.distance(ride.start)
         start_to_dest_dist = ride.distance
         total_distance = car_to_start_dist + start_to_dest_dist
         total_time = ride.latest - now_time
     
         if now_time>ride.latest:
-            print('ERROR Latest finish is already past.')
+            #print('ERROR Latest finish is already past.')
             return False,-1,False,-1
         
         total_waiting_time = total_time - total_distance
@@ -86,7 +105,7 @@ class Vehicle:
          
 if __name__ == '__main__':
     
-    file_name = 'a_example.in'
+    file_name = 'd_metropolis.in'
     f = open(file_name)
     lines = f.readlines()
     f.close()
@@ -102,17 +121,11 @@ if __name__ == '__main__':
     begin_ride = Ride([0,0,0,0,-1,-1],-1)
     end_ride = Ride([0,0,0,0,float('inf'),float('inf')],-2)
     rides = {}
-    rides[-1] = begin_ride
-    rides[-2] = end_ride
     id = 0
     for ride in lines[1:]:
         temp = ride.split()
         rides[id] = Ride([int(t) for t in temp], id)
         id = id + 1
-        
-    #rides = np.array(rides)
-    for i in rides:
-        print(rides[i].distance)
         
     vehicles = {}
 
@@ -124,13 +137,19 @@ if __name__ == '__main__':
     
     myList = []
     for i in rides:
-        rides[i].findCar(vehicles)
         myList.append((i, rides[i].distance))
         
-    myList.sort(key=lambda tup: tup[1])
+    myList.sort(key=lambda tup: tup[1], reverse=True)
+    
+    for ride in myList:
+        rides[ride[0]].findCar(vehicles)
+    
+    file = open('output_d.txt','w') 
     
     for i in vehicles:
-        print(vehicles[i].available)
+        file.write(str(vehicles[i].getWriteNumber()-2) + ' ' + str(vehicles[i]))
+        file.write('\n')
+    file.close() 
 
         
     
